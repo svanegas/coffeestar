@@ -1,0 +1,29 @@
+﻿Compilación iniciada a las 12/09/2014 03:42:19 p.m..
+     1>Proyecto "E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0.vcxproj" en el nodo 2 (build destinos).
+     1>InitializeBuildStatus:
+         Se creará "Debug\CoffeeStar 2.0.unsuccessfulbuild" porque se especificó "AlwaysCreate".
+       ClCompile:
+         Todas las salidas están actualizadas.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\CoffeeStar 2.0.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt "CoffeeStar 2.0.cpp"
+         CoffeeStar 2.0.cpp
+     1>e:\dropbox\universidad\semestre 6\organización de computadores\coffeestar\practice 2\src\coffeestar 2.0\coffeestar 2.0.cpp(323): warning C4715: 'showCurrentCoffeeDetails' : no todas las rutas de acceso de control devuelven un valor
+       ManifestResourceCompile:
+         Todas las salidas están actualizadas.
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\CoffeeStar 2.0.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\Debug\CoffeeStar 2.0.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\Debug\CoffeeStar 2.0.lib" /MACHINE:X86 "Debug\CoffeeStar 2.0.exe.embed.manifest.res"
+         "Debug\CoffeeStar 2.0.obj"
+         Debug\stdafx.obj
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\CoffeeStar 2.0.exe.embed.manifest" /manifest "Debug\CoffeeStar 2.0.exe.intermediate.manifest"
+         Todas las salidas están actualizadas.
+       LinkEmbedManifest:
+         Todas las salidas están actualizadas.
+         CoffeeStar 2.0.vcxproj -> E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe
+       FinalizeBuildStatus:
+         Se eliminará el archivo "Debug\CoffeeStar 2.0.unsuccessfulbuild".
+         Aplicando tarea Touch a "Debug\CoffeeStar 2.0.lastbuildstate".
+     1>Compilación del proyecto terminada "E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0.vcxproj" (build destinos).
+
+Compilación correcta.
+
+Tiempo transcurrido 00:00:01.05
