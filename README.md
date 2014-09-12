@@ -8,7 +8,7 @@ The new CoffeeShop _Coffee Star_ specializes in providing coffee products. The p
 
 | __Product__  | __Price__ |
 | ------------- | ------------- |
-| Coffee | $2.0 |
+| Coffee | $2.00 |
 | Whipped Cream topping | + $0.89 |
 | Cinnamon topping | + $0.25 |
 | Chocolate topping | + $0.59 |
