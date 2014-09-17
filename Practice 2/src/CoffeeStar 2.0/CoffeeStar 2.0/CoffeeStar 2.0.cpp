@@ -713,7 +713,25 @@ endPayment:
 												  //a pagar.
 	else {
 		//TODO Imprimir factura
-		printf("Change %.2f\n", change);
+		cout << "****************************" << endl;
+		cout <<"*********COFFEE STAR********" << endl;
+		cout << "****************************" << endl;
+		cout <<"*********BILL OF SALE*******" << endl;
+		cout << "****************************" << endl;
+		cout << "============================" << endl;
+		if (isTableOrder) cout << "Type of sale: Table service." << endl;
+		else cout << "Type of sale: Bar service." << endl;
+		cout << "============================" << endl;
+		cout << "============================" << endl;
+		printCoffeesInOrder();
+		printTotals();
+		cout << "============================" << endl;
+		cout << "============================" << endl;
+		printf("Amount paid: %.2f\n", amountPaid);
+		printf("Change: %.2f\n", change);
+		cout << "============================" << endl;
+		cout << "Thanks for visiting us" << endl;
+		cout << "We hope to see you soon" << endl;
 	}
 	return false;
 }
