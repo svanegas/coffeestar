@@ -48,18 +48,34 @@ const int CHOCOLATE		= 1 << 2;
 const int AMARETTO		= 1 << 3;
 const int IRISH_WHISKEY = 1 << 4;
 
+//Variables que indican adiciones (posición en la máscara)
+//almacenado en arreglo
+const int toppingBits[COFFEE_ADDITION] = {WHIPPED_CREAM,
+										  CINNAMON,
+										  CHOCOLATE,
+										  AMARETTO,
+										  IRISH_WHISKEY};
+
 //Arreglo para definir los nombres de las adiciones
 const string toppingNames[COFFEE_ADDITION] = {"Whipped Cream",
 											  "Cinnamon",
 											  "Chocolate",
 											  "Amaretto",
 											  "Irish Whiskey"};
+
 //Arreglo para definir los precios de las adiciones de los cafés
 const string toppingPrices[COFFEE_ADDITION] = {"$0.89",
 											   "$0.25",
 											   "$0.59",
 											   "$1.50",
 											   "$1.75"};
+
+//Arreglo para definir los valores de los precios de las adiciones de los cafés
+const double toppingPricesValues[COFFEE_ADDITION] = {0.89,
+													 0.25,
+													 0.59,
+													 1.50,
+													 1.75};
 
 //Flag para indicar si en el pedido que se está haciendo hay al menos
 //un café
@@ -197,19 +213,102 @@ endPrintDetails:
 	}
 }
 
-//Imprime el subtotal, IVA y total de un café de acuerdo a sus adiciones.
-void
-printCoffeePrice(int coffee) {
+//Retorna y puede imprimir el subtotal de un café de acuerdo a sus adiciones.
+double
+computeCoffeePrice(int coffee, bool printPrice) {
 	double coffeePrice = 2.0;
+	int positionDouble;
+	int positionInt;
+	int multFactor = 2;				//Usado para convertir de positionInt
+									//a positionDouble, por ejemplo
+									//positionInt debería ser 0, 4, 8, 12...
+									//y positionDouble 0, 8, 16, 24...
 	__asm {
+		MOV ECX, COFFEE_ADDITION
+		FLD coffeePrice
+		JMP iterateToppings
+
+iterateToppings:
+		MOV positionInt, ECX
+		DEC positionInt
+		MOV EAX, 4					 //Movemos 4 Bytes a EAX para recorrer
+		IMUL positionInt
+		MOV positionInt, EAX		 //Almacenamos positonInt
+		IMUL multFactor				 //Multiplicamos la posición por dos
+									 //debido a que cada double ocupa 8
+									 //Bytes.
+		MOV positionDouble, EAX     //Guardamos el valor de positionDouble
+		MOV EDX, positionInt		 //Recuperamos el valor de positionInt
+									 //almacenandolo en EDX
+		MOV EAX, coffee				 //Movemos el café actual a EAX
+
+		AND EAX, toppingBits+([EDX]) //Hacemos and entre café actual
+									 //y bits correspondientes a la
+									 //adición
+		CMP EAX, 0					 //Comparamos con 0 para saber si
+									 //el AND dio diferente de 0,
+									 //indicando que sí tiene la adición
+		JNE addToppingPrice			 //Si tiene la adición vamos a sumar
+		LOOP iterateToppings		 //Iteramos en las adiciones
+		JMP endAddingCoffeePrices
+
+addToppingPrice:
+		MOV EDX, positionDouble      //Traemos el valor de positionDouble
+									 //y lo almacenamos en EDX
+									 //Sumamos el precio de la adición
+		FADD toppingPricesValues+([EDX])
+		LOOP iterateToppings
+		JMP endAddingCoffeePrices
+
+endAddingCoffeePrices:
+		FSTP coffeePrice			 //Almacenamos el resultado en coffeePrice
 	}
-	cout << "PRICE: " << coffeePrice << endl;
+	if (printPrice) {
+		cout << "======================" << endl;
+		cout << "CoffeePrice: $" << coffeePrice << endl;
+		cout << "======================" << endl;
+	}
+	return coffeePrice;
 }
 
-//De acuerdo al arreglo auxiliar permite al usuario ingresar un índice
-//de un café para cancelarlo o editarlo.
-int
-selectCoffeeToCancelOrEdit (string cancelOrEditText) {
+//Función para imprimir el subtotal, IVA y total de los cafés que hay
+//actualmente en el arreglo auxiliar
+double
+printTotals() {
+	double subtotalPrice = 0.0;
+	double IVA = 0.1;
+	double totalPrice = 0.0;
+	__asm {
+		FLD subtotalPrice
+	}
+	for (int i = 0; i < MAX_COFFEES; i++) {
+		if (auxOrder[i] != -1) {
+			//Mandamos false porque no queremos que imprima los precios,
+			//sólo queremos obtener su valor
+			double coffeePrice = computeCoffeePrice(auxOrder[i], false);
+			__asm {
+				FADD coffeePrice
+			}
+		}
+	}
+	__asm {
+		FST subtotalPrice //Almacenamos el valor del subtotal
+		FMUL IVA		  //Multiplicamos el subtotal por IVA
+		FST IVA			  //Almacenamos valor del IVA
+		FADD subtotalPrice//Sumamos el subtotal al IVA, para que me quede
+						  //el total
+		FSTP totalPrice
+	}
+	printf("El subtotal es: %.2f\n", subtotalPrice);
+	printf("El IVA es: %.2f\n", IVA);
+	printf("El total es: %.2f\n", totalPrice);
+	return totalPrice;
+}
+
+//Método para imprimir cada uno de los cafés que hay en la orden,
+//es decir, en el arreglo auxOrder.
+void
+printCoffeesInOrder() {
 	for (int i = 0; i < MAX_COFFEES; i++) {
 		int coffeeToPrint;
 		int position;
@@ -237,13 +336,24 @@ selectCoffeeToCancelOrEdit (string cancelOrEditText) {
 endPrintDetails:
 			NOP
 		}
-		if (printDetails) {
+		if (printDetails) { //Si el café no existe, no lo imprima
 			cout << "Coffee #" << (i+1) << endl;
 			cout << "=================" << endl;
 			printCoffeeDetails(coffeeToPrint);
-			printCoffeePrice(coffeeToPrint);
+			//Enviamos true porque quiero que me imprima el precio
+			//de una vez
+			computeCoffeePrice(coffeeToPrint, true);
 		}
 	}
+}
+
+//De acuerdo al arreglo auxiliar permite al usuario ingresar un índice
+//de un café para cancelarlo o editarlo.
+int
+selectCoffeeToCancelOrEdit (string cancelOrEditText) {
+	printCoffeesInOrder();
+	//Llamamos para imprimir el subtotal, IVA y total.
+	printTotals();
 	int option;
 	do {
 		cout << "Please, select coffee to " << cancelOrEditText 
@@ -296,7 +406,9 @@ showCurrentCoffeeDetails() {
 	cout << "Current coffee" << endl;
 	cout << "==============" << endl;
 	printCoffeeDetails(currentCoffee);
-	printCoffeePrice(currentCoffee);
+	//Enviamos true porque quiero que me imprima el precio
+	//de una vez
+	computeCoffeePrice(currentCoffee, true);
 	cout << "--" << endl;
 	cout << "0. Confirm coffee" << endl;
 	cout << "1. Edit current coffee" << endl;
@@ -536,6 +648,76 @@ editCoffee(int indexToEdit) {
 	}
 }
 
+//Método para terminar el pedido, mostrar resumen del mismo y leer
+//el valor pagado por el cliente. Retornará true si se seleccionó back,
+//de lo contrario, si se paga satisfactoriamente retorna false.
+bool
+finishAndPayOrder() {
+	printCoffeesInOrder();
+	//Almaceno el valor del total de la orden en valueToPay
+	double valueToPay = printTotals();
+	double amountPaid;
+	do {
+		cout << "Please, enter amount paid OR press 0 to go back" << endl;
+		cin >> amountPaid;
+	} while (amountPaid < 0);
+	if (amountPaid == 0) return true; //Seleccioné back, entonces
+									  //retorno que quiero volver
+									  //a mostrar el menú anterior
+
+
+	/* Generally, most programs test the condition code bits immediately
+	 * after a comparison. Unfortunately, there are no conditional jump
+	 * instructions that branch based on the FPU condition codes. Instead,
+	 * you can use the fstsw instruction to copy the floating point status
+	 * register (see "The FPU Status Register" on page 785) into the ax
+	 * register; then you can use the sahf instruction to copy the ah
+	 * register into the 80x86's condition code bits. After doing this,
+	 * you can can use the conditional jump instructions to test some
+	 * condition. This technique copies C0 into the carry flag, C2 into
+	 * the parity flag, and C3 into the zero flag. The sahf instruction
+	 * does not copy C1 into any of the 80x86's flag bits.
+
+	 * Since the sahf instruction does not copy any 80x87 processor
+	 * status bits into the sign or overflow flags, you cannot use the
+	 * jg, jl, jge, or jle instructions. Instead, use the ja, jae, jb,
+	 * jbe, je, and jz instructions when testing the results of a
+	 * floating point comparison.
+	 */
+	int isAmountPaidEnough;
+	double change;
+	__asm {
+		FLD valueToPay
+		FCOMP amountPaid
+		FSTSW AX
+		SAHF
+		JA notEnoughMoney		 //Si valueToPay > amountPaid entonces debe
+								 //ingresar un valor mayor
+		MOV isAmountPaidEnough, 1//Sí fue suficiente el valor pagado
+		FSTP change				 //Limpiamos contenido de pila de flotantes
+		FLD amountPaid			 //Guardamos en la pila el valor pagado
+		FSUB valueToPay			 //Restamos el valor del pedido para hallar
+								 //para hallar la diferencia
+		FSTP change
+		JMP endPayment
+
+notEnoughMoney:
+		MOV isAmountPaidEnough, 0
+		JMP endPayment
+
+endPayment:
+		NOP
+	}
+	if (!isAmountPaidEnough) finishAndPayOrder(); //Vuelvo a mostrar el resumen
+												  //del pedido y pido el valor
+												  //a pagar.
+	else {
+		//TODO Imprimir factura
+		printf("Change %.2f\n", change);
+	}
+	return false;
+}
+
 bool
 makeOrder() {
 	__asm {
@@ -581,8 +763,8 @@ endChecking:
 	}
 	cout << "1. Add Coffee" << endl;
 	if (!isOrderEmpty) {
-		cout << "2. Edit any coffee" << endl;
-		cout << "3. Remove Coffee" << endl;
+		cout << "2. Edit a coffee" << endl;
+		cout << "3. Remove a coffee" << endl;
 	}
 	cout << "9. Cancel order" << endl;
 
@@ -593,7 +775,18 @@ endChecking:
 	int indexToCancelOrEdit;
 	switch (option) {
 		case 0:
-			//finishAndPayOrder();
+			if (finishAndPayOrder()) {
+				__asm {
+					MOV continueMakingOrder, 1 //Volvemos a mostrar el menú
+				}
+			}
+			else {
+				__asm {
+					MOV continueMakingOrder, 0 //No volvemos a mostrar el menú
+											   //porque ya se pagó
+											   //correctamente.
+				}
+			}
 			break;
 		case 1:
 			while (continueMakingOrder = showToppings());
@@ -815,8 +1008,6 @@ _tmain(int argc, _TCHAR* argv[]) {
 	clearBar(); //Limpiamos la barra.
 
 	while (menu());
-
-	//system("pause");
+	system("pause");
 	return 0;
 }
-
