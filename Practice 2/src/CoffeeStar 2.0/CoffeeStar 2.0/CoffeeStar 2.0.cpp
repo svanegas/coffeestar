@@ -1051,61 +1051,162 @@ checkCashboxTable() {
 	double tableCoffeesPrice = 0;
 	double coffeePrice = 2.00;
 	int coffeesQuantity;
+	double totalSoldInTables;
 
 	cout << "===========================" << endl;
 	cout << "      Table service" << endl;
 	for (int k = 0; k < MAX_TABLES; k++) {
-		__asm {
-			MOV EAX, 4					//Se calcula posición por la fila
-			IMUL k						//Multiplicamos por la fila actual
-			MOV EDX, EAX				//Almacenamos resultado en EDX
-			MOV EAX, 4					//Volvemos a mover 4 Bytes para ya
-										//hacer las columnas
-			IMUL COFFEE_ADDITION		//multiplicamos la última columna
-										//que es donde están los cafés que
-										//se vendieron en la mesa k
-			ADD EAX, EDX				//sumamos el resultado al que ya
-										//teníamos para obtener el resultado
-										//exacto de la posición en el arreglo
-			MOV EDX, EAX
-			MOV EAX, tablesCashBox+([EDX])
-			MOV coffeesQuantity, EAX
-			FILD coffeesQuantity
-			FMUL coffeePrice
-			FSTP tableCoffeesPrice
-		}
-		cout << "-------------------------" << endl;
-		cout << "      Table # " << (k+1) << endl;
-		cout << "------------------------" << endl;
-		cout << "* Coffees sold: " << coffeesQuantity << endl;
-		cout << "* > Unit price: $2.00" << endl;
-		//cout << "* > Total price: " << barCoffeesPrice << endl;
-		printf("* > Total price: $%.2f\n", tableCoffeesPrice);
-		for (int i = 0; i < COFFEE_ADDITION; i++) {
-			double toppingTotalPrice;
-			int toppingsQuantity;
-			int toppingsPricePosition;
+
+		if(tablesCashBox[k][COFFEE_ADDITION] == 0){
+			cout << "-----------------------------------------------------";
+			cout << endl;
+			cout << "      Table # " << (k+1) << " does not record sales."; 
+			cout << endl;
+			cout << "-----------------------------------------------------"; 
+			cout << endl;
+		}else{
+
 			__asm {
 				MOV EAX, 4					//Se calcula posición por la fila
 				IMUL k						//Multiplicamos por la fila actual
 				MOV EDX, EAX				//Almacenamos resultado en EDX
-				MOV EAX, 4
-				IMUL i
-				MOV toppingsPricePosition, EAX //Almacenamos la posición de la
-											//columna para ir por el precio
-											//después
+				MOV EAX, 4					//Volvemos a mover 4 Bytes para ya
+											//hacer las columnas
+				IMUL COFFEE_ADDITION		//multiplicamos la última columna
+											//que es donde están los cafés que
+											//se vendieron en la mesa k
 				ADD EAX, EDX				//sumamos el resultado al que ya
 											//teníamos para obtener el resultado
 											//exacto de la posición en el arreglo
-				MOV EDX, EAX				//Movemos el resultado
+				MOV EDX, EAX
 				MOV EAX, tablesCashBox+([EDX])
+				MOV coffeesQuantity, EAX
+				FILD coffeesQuantity
+				FMUL coffeePrice
+				FST tableCoffeesPrice
+				FSTP totalSoldInTables
+			}
+			cout << "-------------------------" << endl;
+			cout << "      Table # " << (k+1) << endl;
+			cout << "------------------------" << endl;
+			cout << "* Coffees sold: " << coffeesQuantity << endl;
+			cout << "* > Unit price: $2.00" << endl;
+			//cout << "* > Total price: " << barCoffeesPrice << endl;
+			printf("* > Total price: $%.2f\n", tableCoffeesPrice);
+			for (int i = 0; i < COFFEE_ADDITION; i++) {
+				double toppingTotalPrice;
+				int toppingsQuantity;
+				int toppingsPricePosition;
+				__asm {
+					MOV EAX, 4					//Se calcula posición por la fila
+					IMUL k						//Multiplicamos por la fila actual
+					MOV EDX, EAX				//Almacenamos resultado en EDX
+					MOV EAX, 4
+					IMUL i
+					MOV toppingsPricePosition, EAX //Almacenamos la posición de la
+												//columna para ir por el precio
+												//después
+					ADD EAX, EDX				//sumamos el resultado al que ya
+												//teníamos para obtener el resultado
+												//exacto de la posición en el arreglo
+					MOV EDX, EAX				//Movemos el resultado
+					MOV EAX, tablesCashBox+([EDX])
+					MOV toppingsQuantity, EAX
+					FILD toppingsQuantity
+					MOV EAX, 2
+					IMUL toppingsPricePosition
+					MOV EDX, EAX
+					FMUL toppingPricesValues+([EDX])
+					FSTP toppingTotalPrice
+					FLD totalSoldInTables
+					FADD toppingTotalPrice
+					FSTP totalSoldInTables //Se va guardando todo lo que 
+										  //se vendió para mostrar un total 
+										  //de las mesas
+				}
+				printf("------------------------\n");
+				printf("* %s units sold: %d\n", toppingNames[i].c_str(), toppingsQuantity);
+				printf("* > Unit price: %s\n", toppingPrices[i].c_str());
+				printf("* > Total price: $%.2f\n", toppingTotalPrice);
+			}
+			cout << endl;
+			cout << "*****TABLE SERVICE - SUBTOTAL*****" << endl;
+			printf("* $%.2f\n", totalSoldInTables);
+			cout << "****************************" << endl;
+			cout << "*****TABLE SERVICE - IVA*****" << endl;
+			double iva = 0.1;
+			__asm{
+				FLD iva
+				FMUL totalSoldInTables
+				FSTP iva
+			}
+			printf("* $%.2f\n", iva);
+			cout << "****************************" << endl;
+			cout << "*****TABLE SERVICE - TOTAL*****" << endl;
+			__asm{
+				FLD totalSoldInTables
+				FADD iva
+				FSTP totalSoldInTables
+			}
+			printf("* $%.2f\n", totalSoldInTables);
+			cout << "****************************" << endl;
+		}
+	}
+}
+
+void
+checkCashboxBar() {
+	double totalSoldInBar;
+	if(barCashBox[COFFEE_ADDITION] == 0){
+			cout << "----------------------------------------------------";
+			cout << endl;
+			cout << "      Bar service does not record sales." << endl;
+			cout << "-----------------------------------------------------"; 
+			cout << endl;
+	}else{
+		double barCoffeesPrice = 0;
+		double coffeePrice = 2.00;
+		int coffeesQuantity;
+
+		__asm {
+			MOV EAX, 4
+			IMUL COFFEE_ADDITION
+			MOV EDX, EAX
+			MOV EAX, barCashBox+([EDX])
+			MOV coffeesQuantity, EAX
+			FILD coffeesQuantity
+			FMUL coffeePrice
+			FST barCoffeesPrice
+			FSTP totalSoldInBar  //Se va guardando todo lo que se vendió para
+								 //mostrar un total de la barra
+		}
+		cout << "------------------------" << endl;
+		cout << "Bar service" << endl;
+		cout << "------------------------" << endl;
+		cout << "* Coffees sold: " << coffeesQuantity << endl;
+		cout << "* > Unit price: $2.00" << endl;
+		//cout << "* > Total price: " << barCoffeesPrice << endl;
+		printf("* > Total price: $%.2f\n", barCoffeesPrice);
+		for (int i = 0; i < COFFEE_ADDITION; i++) {
+			double toppingTotalPrice;
+			int toppingsQuantity;
+			__asm {
+				MOV EAX, 4
+				IMUL i
+				MOV EDX, EAX
+				MOV EAX, barCashBox+([EDX])
 				MOV toppingsQuantity, EAX
 				FILD toppingsQuantity
 				MOV EAX, 2
-				IMUL toppingsPricePosition
+				IMUL EDX
 				MOV EDX, EAX
 				FMUL toppingPricesValues+([EDX])
 				FSTP toppingTotalPrice
+				FLD totalSoldInBar  
+				FADD toppingTotalPrice
+				FSTP totalSoldInBar   //Se va guardando todo lo que 
+									  //se vendió para mostrar un total 
+									  //de la barra
 			}
 			printf("------------------------\n");
 			printf("* %s units sold: %d\n", toppingNames[i].c_str(), toppingsQuantity);
@@ -1113,12 +1214,33 @@ checkCashboxTable() {
 			printf("* > Total price: $%.2f\n", toppingTotalPrice);
 		}
 		cout << endl;
+		cout << "*****BAR SERVICE - SUBTOTAL*****" << endl;
+		printf("* $%.2f\n", totalSoldInBar);
+		cout << "****************************" << endl;
+		cout << "*****BAR SERVICE - IVA*****" << endl;
+		double iva = 0.1;
+		__asm{
+			FLD iva
+			FMUL totalSoldInBar
+			FSTP iva
+		}
+		printf("* $%.2f\n", iva);
+		cout << "****************************" << endl;
+		cout << "*****BAR SERVICE - TOTAL*****" << endl;
+		__asm{
+			FLD totalSoldInBar
+			FADD iva
+			FSTP totalSoldInBar
+		}
+		printf("* $%.2f\n", totalSoldInBar);
+		cout << "****************************" << endl;
 	}
 }
 
 void
-checkCashboxBar() {
-	double barCoffeesPrice = 0;
+checkCashboxTotals() {
+	double totalSoldToday;
+	double coffeesTotalPrice = 0;
 	double coffeePrice = 2.00;
 	int coffeesQuantity;
 
@@ -1127,33 +1249,81 @@ checkCashboxBar() {
 		IMUL COFFEE_ADDITION
 		MOV EDX, EAX
 		MOV EAX, barCashBox+([EDX])
-		MOV coffeesQuantity, EAX
+		MOV coffeesQuantity, EAX  //Hasta aquí se tienen los cafés de la barra
+		MOV ECX, MAX_TABLES
+		JMP iterateCoffeesInTables
+
+iterateCoffeesInTables:
+		MOV EDX, ECX
+		DEC EDX
+		MOV EAX, 4					//Se calcula posición por la fila
+		IMUL EDX					//Multiplicamos por la fila actual
+		MOV EDX, EAX				//Almacenamos resultado en EDX
+		MOV EAX, 4					//Volvemos a mover 4 Bytes para ya
+									//hacer las columnas
+		IMUL COFFEE_ADDITION		//multiplicamos la última columna
+									//que es donde están los cafés que
+									//se vendieron en la mesa k
+		ADD EAX, EDX				//sumamos el resultado al que ya
+									//teníamos para obtener el resultado
+									//exacto de la posición en el arreglo
+		MOV EDX, EAX
+		MOV EAX, tablesCashBox+([EDX])
+		ADD coffeesQuantity, EAX  
+		LOOP iterateCoffeesInTables
+		JMP getCoffeesTotalPrice
+
+getCoffeesTotalPrice:
 		FILD coffeesQuantity
 		FMUL coffeePrice
-		FSTP barCoffeesPrice
+		FST coffeesTotalPrice
+		FSTP totalSoldToday  
 	}
 	cout << "------------------------" << endl;
-	cout << "Bar service" << endl;
+	cout << "General Cashbox" << endl;
 	cout << "------------------------" << endl;
 	cout << "* Coffees sold: " << coffeesQuantity << endl;
 	cout << "* > Unit price: $2.00" << endl;
-	//cout << "* > Total price: " << barCoffeesPrice << endl;
-	printf("* > Total price: $%.2f\n", barCoffeesPrice);
+	printf("* > Total price: $%.2f\n", coffeesTotalPrice);
 	for (int i = 0; i < COFFEE_ADDITION; i++) {
 		double toppingTotalPrice;
 		int toppingsQuantity;
+		int toppingPricePos;
 		__asm {
 			MOV EAX, 4
 			IMUL i
 			MOV EDX, EAX
 			MOV EAX, barCashBox+([EDX])
 			MOV toppingsQuantity, EAX
-			FILD toppingsQuantity
 			MOV EAX, 2
 			IMUL EDX
-			MOV EDX, EAX
+			MOV toppingPricePos, EAX
+		}
+		for(int k = 0; k < MAX_TABLES; k++){
+			__asm{
+				MOV EAX, 4					//Se calcula posición por la fila
+				IMUL k						//Multiplicamos por la fila actual
+				MOV EDX, EAX				//Almacenamos resultado en EDX
+				MOV EAX, 4
+				IMUL i
+				ADD EAX, EDX				//sumamos el resultado al que ya
+											//teníamos para obtener el resultado
+											//exacto de la posición en el arreglo
+				MOV EDX, EAX				//Movemos el resultado
+				MOV EAX, tablesCashBox+([EDX])
+				ADD toppingsQuantity, EAX
+			}
+		}
+		__asm{
+			FILD toppingsQuantity
+			MOV EDX, toppingPricePos
 			FMUL toppingPricesValues+([EDX])
 			FSTP toppingTotalPrice
+			FLD totalSoldToday  
+			FADD toppingTotalPrice
+			FSTP totalSoldToday   //Se va guardando todo lo que 
+								  //se vendió para mostrar un total 
+								  //general
 		}
 		printf("------------------------\n");
 		printf("* %s units sold: %d\n", toppingNames[i].c_str(), toppingsQuantity);
@@ -1161,12 +1331,34 @@ checkCashboxBar() {
 		printf("* > Total price: $%.2f\n", toppingTotalPrice);
 	}
 	cout << endl;
+	cout << "*****GENERAL - SUBTOTAL*****" << endl;
+	printf("* $%.2f\n", totalSoldToday);
+	cout << "****************************" << endl;
+	cout << "********GENERAL - IVA*******" << endl;
+	double iva = 0.1;
+	__asm{
+		FLD iva
+		FMUL totalSoldToday
+		FSTP iva
+	}
+	printf("* $%.2f\n", iva);
+	cout << "****************************" << endl;
+	cout << "*****GENERAL - TOTAL********" << endl;
+	__asm{
+		FLD totalSoldToday
+		FADD iva
+		FSTP totalSoldToday
+	}
+	printf("* $%.2f\n", totalSoldToday);
+	cout << "****************************" << endl;
+	
 }
 
 void
 checkCashbox() {
 	checkCashboxBar();
 	checkCashboxTable();
+	checkCashboxTotals();
 }
 
 void
@@ -1223,7 +1415,7 @@ menu() {
 			return true;
 			break;
 		case 3:
-			cout << "See you tomorrow" << endl;
+			cout << "See you tomorrow!" << endl;
 			return false;
 			break;
 		default:
