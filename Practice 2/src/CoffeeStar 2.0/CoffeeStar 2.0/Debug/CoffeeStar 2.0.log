@@ -1,26 +1,28 @@
-﻿Compilación iniciada a las 22/09/2014 05:21:56 p.m..
-     1>Proyecto "C:\Users\Alejandro Sanchez A\Dropbox\EAFIT\6 Semestre\Organización de Computadores\Práctica 2\CoffeeStar 2.0\CoffeeStar 2.0\CoffeeStar 2.0.vcxproj" en el nodo 2 (build destinos).
+﻿Compilación iniciada a las 24/09/2014 03:40:22 p.m..
+     1>Proyecto "E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0\CoffeeStar 2.0.vcxproj" en el nodo 2 (build destinos).
      1>InitializeBuildStatus:
-         Aplicando tarea Touch a "Debug\CoffeeStar 2.0.unsuccessfulbuild".
+         Se creará "Debug\CoffeeStar 2.0.unsuccessfulbuild" porque se especificó "AlwaysCreate".
        ClCompile:
          Todas las salidas están actualizadas.
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\CoffeeStar 2.0.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt "CoffeeStar 2.0.cpp"
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\CoffeeStar 2.0.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt "CoffeeStar 2.0.cpp"
          CoffeeStar 2.0.cpp
-     1>CoffeeStar 2.0.cpp(262): warning C4410: tamaño no válido para el operando
-     1>CoffeeStar 2.0.cpp(1119): warning C4410: tamaño no válido para el operando
-     1>CoffeeStar 2.0.cpp(1203): warning C4410: tamaño no válido para el operando
-     1>CoffeeStar 2.0.cpp(1320): warning C4410: tamaño no válido para el operando
+     1>CoffeeStar 2.0.cpp(266): warning C4410: tamaño no válido para el operando
+     1>CoffeeStar 2.0.cpp(1122): warning C4129: 'T' : secuencia de escape de carácter no reconocida
+     1>CoffeeStar 2.0.cpp(1214): warning C4129: 'A' : secuencia de escape de carácter no reconocida
+     1>CoffeeStar 2.0.cpp(1314): warning C4410: tamaño no válido para el operando
+     1>CoffeeStar 2.0.cpp(1398): warning C4410: tamaño no válido para el operando
+     1>CoffeeStar 2.0.cpp(1525): warning C4410: tamaño no válido para el operando
        Link:
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Alejandro Sanchez A\Dropbox\EAFIT\6 Semestre\Organización de Computadores\Práctica 2\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\CoffeeStar 2.0.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Alejandro Sanchez A\Dropbox\EAFIT\6 Semestre\Organización de Computadores\Práctica 2\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Alejandro Sanchez A\Dropbox\EAFIT\6 Semestre\Organización de Computadores\Práctica 2\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.lib" /MACHINE:X86 "Debug\CoffeeStar 2.0.obj"
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\CoffeeStar 2.0.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.lib" /MACHINE:X86 "Debug\CoffeeStar 2.0.obj"
          Debug\stdafx.obj
-         CoffeeStar 2.0.vcxproj -> C:\Users\Alejandro Sanchez A\Dropbox\EAFIT\6 Semestre\Organización de Computadores\Práctica 2\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe
+         CoffeeStar 2.0.vcxproj -> E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe
        Manifest:
-         C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\Alejandro Sanchez A\Dropbox\EAFIT\6 Semestre\Organización de Computadores\Práctica 2\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe;#1" /manifest "Debug\CoffeeStar 2.0.exe.intermediate.manifest"
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0\Debug\CoffeeStar 2.0.exe;#1" /manifest "Debug\CoffeeStar 2.0.exe.intermediate.manifest"
        FinalizeBuildStatus:
          Se eliminará el archivo "Debug\CoffeeStar 2.0.unsuccessfulbuild".
          Aplicando tarea Touch a "Debug\CoffeeStar 2.0.lastbuildstate".
-     1>Compilación del proyecto terminada "C:\Users\Alejandro Sanchez A\Dropbox\EAFIT\6 Semestre\Organización de Computadores\Práctica 2\CoffeeStar 2.0\CoffeeStar 2.0\CoffeeStar 2.0.vcxproj" (build destinos).
+     1>Compilación del proyecto terminada "E:\Dropbox\Universidad\Semestre 6\Organización de Computadores\coffeestar\Practice 2\src\CoffeeStar 2.0\CoffeeStar 2.0\CoffeeStar 2.0.vcxproj" (build destinos).
 
 Compilación correcta.
 
-Tiempo transcurrido 00:00:01.65
+Tiempo transcurrido 00:00:01.44

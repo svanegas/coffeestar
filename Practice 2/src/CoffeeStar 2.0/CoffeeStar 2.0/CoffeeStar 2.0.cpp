@@ -31,6 +31,9 @@ int globalCashBox[COFFEE_ADDITION + 1];
 //Variable que contiene el café actual.
 int currentCoffee;
 
+//Variable para almacenar el id de la mesa que se está atendiendo actualmente
+int currentTableId;
+
 //Arreglo global para almacenar un pedido generado por la función
 //makeOrder().
 int auxOrder[MAX_COFFEES];
@@ -91,6 +94,7 @@ bool orderCanceled = false;
 bool makeOrder();
 void cancelOrder();
 void addBarToCashbox();
+void addTableToCashBox(int tableIndex);
 
 //Permite confirmar y agregar al pedido el café que está en currentCoffee
 void 
@@ -616,22 +620,20 @@ showToppings() {
 //la orden
 void
 cancelOrder() {
-	int position;
 	__asm {
 		MOV currentCoffee, 0	  //Limpiar el café actual
 		MOV ECX, MAX_COFFEES	  //Inicializar el contador para el ciclo
-		JMP clearLoop
+		JMP clearLoopCancelOrder
 
-clearLoop:
-		MOV EAX, MAX_COFFEES
-		SUB EAX, ECX		      //Se convierte ese valor de manera 
-								  //que se itere ascendentemente.
-								  // 8 - ECX (Número de iteración)
-		MOV position, EAX
-		MOV EAX, 4	              //Movemos el tamaño 4 Bytes (int) a EAX
-		IMUL position			  //Multiplicamos los 4 Bytes por la
-								  //posición candidata
-		MOV auxOrder+([EAX]), -1 //Limpiar la posición actual del vector
+clearLoopCancelOrder:
+		MOV EDX, ECX
+		DEC EDX
+		MOV EAX, 4				//Movemos el tamaño 4 Bytes (int) a EAX
+		IMUL EDX				//Multiplicamos los 4 Bytes por la
+								//posición candidata
+		MOV EDX, EAX
+		MOV auxOrder+([EDX]), -1//Limpiar la posición actual del vector
+		LOOP clearLoopCancelOrder
 	}
 }
 
@@ -734,11 +736,15 @@ endPayment:
 		cout << "============================" << endl;
 		cout << "Thanks for visiting us" << endl;
 		cout << "We hope to see you soon" << endl;
+		if (!isTableOrder) addBarToCashbox();
+											//Se envía el ID de la mesa
+											//que antendí, para indicar
+											//la posición en la que se quiere
+											//almacenar en el Cashbox
+		else if (isTableOrder) addTableToCashBox(currentTableId); 
+		cancelOrder(); //Llamamos el método cancelar orden para limpiar el
+					   //arreglo auxiliar.
 	}
-	//TODO Llamar método que me compute los datos para el cashbox
-	addBarToCashbox();
-	cancelOrder(); //Llamamos el método cancelar orden para limpiar el
-				   //arreglo auxiliar.
 	return false; //Retornamos false porque no queremos volver
 				  //a mostrar el menú.
 }
@@ -790,6 +796,9 @@ endChecking:
 	if (!isOrderEmpty) {
 		cout << "2. Edit a coffee" << endl;
 		cout << "3. Remove a coffee" << endl;
+		if (isTableOrder) {
+			printf("4. Save order\n");
+		}
 	}
 	cout << "9. Cancel order" << endl;
 
@@ -876,6 +885,15 @@ endEditCoffee:
 			cancelAnyCoffee(indexToCancelOrEdit);
 			continueMakingOrder = true;
 			break;
+		case 4:
+			//Lo único que se espera es salirnos de este menú, y en el
+			//menú anterior copiamos los valores que hay en auxOrder
+			//a la matriz de mesas en la posición indicada
+			__asm {
+				MOV continueMakingOrder, 0 //Se canceló la orden y se debe
+										   //volver al menú inicial
+			}
+			break;
 		case 9:
 			cancelOrder();
 			__asm {
@@ -893,34 +911,40 @@ endEditCoffee:
 }
 
 void
-handleBar() {
-	//Asigna al pedido de la barra lo que hay en el arreglo auxiliar.
-	//Se utiiza auxiliar porque se quiere generalizar makeOrder
-	int position;
+handleTable(int tableIndex) {
+	//Asigna el pedido de lo que hay en el arreglo auxiliar
+	//a la mesa que recibe como parámetro
+	int rowPosition;
 	__asm {
 		MOV ECX, MAX_COFFEES
 		JMP copyArray
 
 copyArray:
-		MOV EAX, MAX_COFFEES     
-		SUB EAX, ECX		        //Se convierte ese valor de manera 
-								    //que se itere ascendentemente.
-								    // 8 - ECX (Número de iteración)
-		MOV position, EAX
-		MOV EAX, 4	                //Movemos el tamaño 4 Bytes (int) a EAX
-		IMUL position			    //Multiplicamos los 4 Bytes por la
-								    //posición candidata
-		MOV EDX, auxOrder+([EAX])   //Movemos a EDX el contenido del
+		MOV EAX, 4
+		IMUL tableIndex				//Ya tenemos los Bytes de la fila
+		IMUL MAX_COFFEES			//Eq: fila * (4Bytes * maxcolumnas)
+		MOV rowPosition, EAX		//correspondiente a la mesa
+		MOV EDX, ECX				//Ahora vamos a procesar los Bytes
+		DEC EDX						//para la columna
+		MOV EAX, 4					
+		IMUL EDX
+		MOV EDX, EAX
+		MOV EAX, auxOrder+([EDX])   //Movemos a EAX el contenido del
 									//arreglo auxOrder en la posición
 									//indicada
-		MOV bar+([EAX]), EDX		//Movemos al arreglo de la barra el
+		ADD EDX, rowPosition		//Sumamos las filas a las columnas
+		MOV tables+([EDX]), EAX		//Movemos al arreglo de la barra el
 									//contenido que había en el auxiliar
 		LOOP copyArray
 	}
 
 	cout << "Los cafes quedaron:" << endl;
-	for (int i = 0; i < MAX_COFFEES; i++) {
-		cout << bar[i] << " | ";
+	for (int i = 0; i < MAX_TABLES; i++) {
+		printf("Mesa %d - ", i+1);
+		for (int j = 0; j < MAX_COFFEES; j++) {
+			cout << tables[i][j] << " || ";
+		}
+		puts("");
 	}
 	cout << endl;
 }
@@ -934,7 +958,6 @@ selectTable(){
 	}
 	while (option <= 0 || option > 20);
 	return option - 1;
-
 }
 
 void
@@ -944,8 +967,44 @@ barMenu(){
 		auxOrder[i] = -1; //Se hace para luego saber qué cafés existen
 						  //en el pedido, y cuáles no.
 	}
-
 	while (makeOrder());
+}
+
+//Mueve todos los cafés de una mesa seleccionada al arreglo auxiliar
+void
+tableMenu(int tableSelected) {
+	//Traemos el pedido que tiene la mesa seleccionada actualmente
+	int rowPosition;
+	__asm {
+		MOV ECX, MAX_COFFEES
+		JMP putTableOrderInAux
+
+putTableOrderInAux:
+		MOV EAX, 4			  //Movemos 4 Bytes
+		IMUL tableSelected	  //Multiplicamos por la fila
+		IMUL MAX_COFFEES      //Ecuación fila * (4Bytes * MAX_COFFEES)
+		MOV rowPosition, EAX  //Almacenamos el valor multiplicado
+		MOV EDX, ECX		  //Traemos de ECX lo que corresponde a la columna
+		DEC EDX				  //Decrementamos porque ECX está base 1
+		MOV EAX, 4			  //Movemos 4 Bytes
+		IMUL EDX			  //Multiplicamos por columna
+		MOV EDX, EAX		 
+		ADD EDX, rowPosition  //Sumo lo que había guardado de la fila
+		MOV EAX, tables+([EDX])//Recupero el valor del cafe en la mesa
+		SUB EDX, rowPosition  //Se resta el valor de la fila a la columna
+		MOV auxOrder+([EDX]), EAX //Muevo el valor que recuperé al arreglo
+								  //auxiliar
+		LOOP putTableOrderInAux //Itero
+	}
+	while (makeOrder());
+	puts("AQUI SALI O CANCELE LA ORDEN");
+	for (int i = 0; i < MAX_COFFEES; i++) {
+		cout << auxOrder[i] << " ||| ";
+	}
+	puts("\nTERMINE DE IMPRIMIR AUX ORDER");
+	//Copiar el arreglo auxiliar a la matriz de la mesa en la posición
+	//correspondiente a la mesa seleccionada
+	handleTable(tableSelected);
 }
 
 void 
@@ -960,8 +1019,13 @@ manageOrder() {
 	switch (option) {
 		case 1:
 			isTableOrder = true;
-			tableSelected = selectTable(); // Se sabe que mesa se desea atender.
-			// tableMenu(tableSelected);
+			tableSelected = selectTable(); // Se sabe que mesa se desea atender
+			__asm {
+				MOV EAX, tableSelected
+				MOV currentTableId, EAX//Guardamos el id de la mesa
+									   //que vamos a atender
+			}
+			tableMenu(tableSelected);
 			break;
 		case 2:
 			isTableOrder = false;
@@ -971,13 +1035,15 @@ manageOrder() {
 			break;
 		default:
 			manageOrder();
+
 			break;
 
 	}
 }
 
 //Toma el arreglo auxiliar y lo suma al cuadre de caja de la barra
-void addBarToCashbox() {
+void
+addBarToCashbox() {
 	for (int i = 0; i < MAX_COFFEES; i++) {
 		int coffee;
 		int analyzeCoffee;
@@ -1002,7 +1068,7 @@ endAnalyzing:
 		}
 		if (analyzeCoffee) {
 			int position;
-			int coffeesCountPosition = 5 * 4;
+			int coffeesCountPosition = COFFEE_ADDITION * 4;
 			__asm {
 				MOV ECX, COFFEE_ADDITION
 				JMP iterateToppings2
@@ -1046,6 +1112,119 @@ endAddingCashBoxCount:
 	}
 }
 
+//Toma el arreglo auxiliar y lo suma al cuadre de la mesa recibida
+void
+addTableToCashBox(int tableIndex) {
+	printf("ASI ES EL ARREGLO AUXILIAR AL ENTRAR A ADDTABLETOCASHBOX\n");
+	for (int i = 0; i < MAX_COFFEES; i++) {
+		cout << auxOrder[i] << " ~ ";
+	}
+	printf("\TERMINE DE IMPRIMIER ARREGLO AUXILIAR\n");
+	for (int i = 0; i < MAX_COFFEES; i++) {
+		int coffee;
+		int analyzeCoffee;
+		__asm {
+			MOV EAX, 4
+			IMUL i
+			MOV EDX, EAX
+			
+			MOV EAX, auxOrder+([EDX])
+			MOV coffee, EAX
+			CMP EAX, -1
+			JE dontAnalyzeTable
+			MOV analyzeCoffee, 1
+			JMP endAnalyzingTable
+
+dontAnalyzeTable:
+			MOV analyzeCoffee, 0
+			JMP endAnalyzingTable
+
+endAnalyzingTable:
+			NOP
+		}
+		if (analyzeCoffee) {
+			int position;
+			int coffeesCountPosition = COFFEE_ADDITION * 4;
+			int columnPosition;
+
+			__asm {
+				MOV ECX, COFFEE_ADDITION
+				JMP iterateToppings2Table
+
+iterateToppings2Table:
+				MOV position, ECX
+				DEC position
+				MOV EAX, 4				  //Movemos 4 Bytes a EAX para recorrer
+				IMUL position
+				MOV position, EAX			 //Almacenamos positonInt
+				MOV EDX, position			 //Recuperamos el valor de position
+											 //almacenandolo en EDX
+				MOV columnPosition, EDX		 //Guardamos la posición de la
+											 //columna
+				MOV EAX, coffee				 //Movemos el café actual a EAX
+
+				AND EAX, toppingBits+([EDX]) //Hacemos and entre café actual
+											 //y bits correspondientes a la
+											 //adición
+				CMP EAX, 0					 //Comparamos con 0 para saber si
+											 //el AND dio diferente de 0,
+											 //indicando que sí tiene la adición
+				JNE addCashBoxCountTable     //Si tiene la adición vamos a sumar
+				LOOP iterateToppings2Table   //Iteramos en las adiciones
+				JMP endAddingCashBoxCountTable
+
+addCashBoxCountTable:
+				MOV EAX, 4
+				MOV EBX, COFFEE_ADDITION
+				INC EBX
+				IMUL EBX					//Multiplicamos los 4 Bytes por las
+											//5 adiciones (+ casilla para café)
+				IMUL tableIndex				//Eq = fila 
+											//	* (4Bytes * COFFEE_ADDITION+1)
+				MOV EDX, EAX				//Sumamos los Bytes de la fila
+											//a la columna que ya tengo en EDX
+				ADD EDX, columnPosition		//Se suma la columna que corresponde
+											//a la adición
+				MOV EAX, tablesCashBox+([EDX])//Aumentamos contador de adiciones
+				INC EAX
+				MOV tablesCashBox+([EDX]), EAX
+				LOOP iterateToppings2Table
+				JMP endAddingCashBoxCountTable
+
+endAddingCashBoxCountTable:
+				MOV EAX, 4		
+				MOV EBX, COFFEE_ADDITION
+				INC EBX						//NOTA: No se guarda el EDX
+											//anterior, por lo que necesitamos
+											//recuperar el EDX de la variable
+				IMUL EBX					//Multiplicamos los 4 Bytes por las
+											//5 adiciones (+ casilla para café)
+				IMUL tableIndex				//Eq = fila 
+											//	* (4Bytes * COFFEE_ADDITION+1)
+				MOV EDX, EAX				//Sumamos los Bytes de la fila
+				ADD EDX, coffeesCountPosition 
+				MOV EAX, tablesCashBox+([EDX])  //Aumentamos uno al contador de
+											   //cafés
+				INC EAX
+				MOV tablesCashBox+([EDX]), EAX
+				NOP
+			}
+		}
+
+		printf("\ASI VOY CASHBOX CON EL CAFE %d\n", i);
+		for (int j = 0; j < COFFEE_ADDITION + 1; j++) {
+			cout << tablesCashBox[tableIndex][j] << " ** ";
+		}
+		printf("\nTERMINE\n");
+	}
+
+	puts("ASI QUEDO EL CASHBOX DE ESTA MESA SIN TILDES");
+	for (int i = 0; i <= COFFEE_ADDITION; i++) {
+		cout << tablesCashBox[tableIndex][i] << " ";
+	}
+	puts("ASI FINALIZO DE MOSTRAR EL CASHBOX DE LA MESA");
+}
+
 void
 checkCashboxTable() {
 	double tableCoffeesPrice = 0;
@@ -1057,28 +1236,36 @@ checkCashboxTable() {
 	cout << "      Table service" << endl;
 	for (int k = 0; k < MAX_TABLES; k++) {
 
-		if(tablesCashBox[k][COFFEE_ADDITION] == 0){
+		if(tablesCashBox[k][COFFEE_ADDITION] == 0) {
 			cout << "-----------------------------------------------------";
 			cout << endl;
 			cout << "      Table # " << (k+1) << " does not record sales."; 
 			cout << endl;
 			cout << "-----------------------------------------------------"; 
 			cout << endl;
-		}else{
-
+		}
+		else {
+			int rowIndex;
 			__asm {
+				MOV EAX, COFFEE_ADDITION
+				MOV rowIndex, EAX			//Obtenemos los Bytes de la fila
 				MOV EAX, 4					//Se calcula posición por la fila
+				INC rowIndex					//con la ecuación:
+				IMUL rowIndex				//Eq: fila 
+											//	* (4Bytes * COFFEE_ADDITION)
 				IMUL k						//Multiplicamos por la fila actual
+				MOV rowIndex, EAX			//Almacenamos el índice de la fila
 				MOV EDX, EAX				//Almacenamos resultado en EDX
 				MOV EAX, 4					//Volvemos a mover 4 Bytes para ya
 											//hacer las columnas
-				IMUL COFFEE_ADDITION		//multiplicamos la última columna
+				IMUL COFFEE_ADDITION		//Multiplicamos la última columna
 											//que es donde están los cafés que
 											//se vendieron en la mesa k
-				ADD EAX, EDX				//sumamos el resultado al que ya
+				MOV EDX, EAX				//Ponemos el resultado al que ya
 											//teníamos para obtener el resultado
 											//exacto de la posición en el arreglo
-				MOV EDX, EAX
+				ADD EDX, rowIndex			//Sumamos los Bytes de la fila a lo
+											//que teníamos
 				MOV EAX, tablesCashBox+([EDX])
 				MOV coffeesQuantity, EAX
 				FILD coffeesQuantity
@@ -1098,22 +1285,30 @@ checkCashboxTable() {
 				int toppingsQuantity;
 				int toppingsPricePosition;
 				__asm {
-					MOV EAX, 4					//Se calcula posición por la fila
+					/*MOV EAX, 4					//Se calcula posición por la fila
+					MOV EBX, COFFEE_ADDITION	//Eq = filas 
+												//* (4Bytes 
+												//* (COFFE_ADDITION + 1))
+					INC EBX
+					IMUL EBX
 					IMUL k						//Multiplicamos por la fila actual
-					MOV EDX, EAX				//Almacenamos resultado en EDX
+					MOV EDX, EAX				//Almacenamos resultado en EDX*/
 					MOV EAX, 4
 					IMUL i
 					MOV toppingsPricePosition, EAX //Almacenamos la posición de la
 												//columna para ir por el precio
 												//después
-					ADD EAX, EDX				//sumamos el resultado al que ya
+					ADD EAX, rowIndex			//Sumamos el resultado al que ya
 												//teníamos para obtener el resultado
 												//exacto de la posición en el arreglo
 					MOV EDX, EAX				//Movemos el resultado
 					MOV EAX, tablesCashBox+([EDX])
 					MOV toppingsQuantity, EAX
 					FILD toppingsQuantity
-					MOV EAX, 2
+					MOV EAX, 2					//Hay que multiplicar la posición
+												//por 2 porque hay que acceder
+												//al arreglo de los precios que
+												//es double
 					IMUL toppingsPricePosition
 					MOV EDX, EAX
 					FMUL toppingPricesValues+([EDX])
@@ -1243,7 +1438,7 @@ checkCashboxTotals() {
 	double coffeesTotalPrice = 0;
 	double coffeePrice = 2.00;
 	int coffeesQuantity;
-
+	int rowIndex;
 	__asm {
 		MOV EAX, 4
 		IMUL COFFEE_ADDITION
@@ -1254,17 +1449,21 @@ checkCashboxTotals() {
 		JMP iterateCoffeesInTables
 
 iterateCoffeesInTables:
-		MOV EDX, ECX
-		DEC EDX
+		MOV rowIndex, ECX
+		DEC rowIndex
 		MOV EAX, 4					//Se calcula posición por la fila
-		IMUL EDX					//Multiplicamos por la fila actual
-		MOV EDX, EAX				//Almacenamos resultado en EDX
+		MOV EBX, COFFEE_ADDITION
+		INC EBX						//Eq: fila 
+									//* (4Bytes * (COFFE_ADDITION + 1))
+		IMUL EBX
+		IMUL rowIndex					//Multiplicamos por la fila actual
+		MOV rowIndex, EAX			//Almacenamos la fila en Bytes
 		MOV EAX, 4					//Volvemos a mover 4 Bytes para ya
 									//hacer las columnas
-		IMUL COFFEE_ADDITION		//multiplicamos la última columna
+		IMUL COFFEE_ADDITION		//Multiplicamos la última columna
 									//que es donde están los cafés que
 									//se vendieron en la mesa k
-		ADD EAX, EDX				//sumamos el resultado al que ya
+		ADD EAX, rowIndex			//sumamos el resultado al que ya
 									//teníamos para obtener el resultado
 									//exacto de la posición en el arreglo
 		MOV EDX, EAX
@@ -1299,14 +1498,18 @@ getCoffeesTotalPrice:
 			IMUL EDX
 			MOV toppingPricePos, EAX
 		}
-		for(int k = 0; k < MAX_TABLES; k++){
+		for(int k = 0; k < MAX_TABLES; k++) {
 			__asm{
 				MOV EAX, 4					//Se calcula posición por la fila
+				MOV EBX, COFFEE_ADDITION
+				INC EBX						//Eq= fila 
+											//* (4Bytes*(COFFEE_ADDITION + 1))
+				IMUL EBX
 				IMUL k						//Multiplicamos por la fila actual
-				MOV EDX, EAX				//Almacenamos resultado en EDX
+				MOV rowIndex, EAX			//Almaceno la fila
 				MOV EAX, 4
 				IMUL i
-				ADD EAX, EDX				//sumamos el resultado al que ya
+				ADD EAX, rowIndex			//Sumamos el resultado al que ya
 											//teníamos para obtener el resultado
 											//exacto de la posición en el arreglo
 				MOV EDX, EAX				//Movemos el resultado
@@ -1315,7 +1518,9 @@ getCoffeesTotalPrice:
 			}
 		}
 		__asm{
-			FILD toppingsQuantity
+			FILD toppingsQuantity			//toppingsQuantity es la suma de 
+											//las cantidades del topping en
+											//la barra y la mesa
 			MOV EDX, toppingPricePos
 			FMUL toppingPricesValues+([EDX])
 			FSTP toppingTotalPrice
@@ -1356,6 +1561,14 @@ getCoffeesTotalPrice:
 
 void
 checkCashbox() {
+	printf("VOY A IMPRIMIR LA TABLA DEL CASHBOX\n");
+	for (int i = 0; i < MAX_TABLES; i++) {
+		printf("Mesa %d\n", i);
+		for (int j = 0; j < COFFEE_ADDITION + 1; j++) {
+			cout << tablesCashBox[i][j] << "¡¡";
+		}
+		puts("");
+	}
 	checkCashboxBar();
 	checkCashboxTable();
 	checkCashboxTotals();
@@ -1368,7 +1581,7 @@ clearTables(bool clearAll, int tableNumber) {
 	if (clearAll) {
 		for (int i = 0; i < MAX_TABLES; i++) {
 			for (int j = 0; j < MAX_COFFEES; j++) {
-				tables[i][j] = 0;
+				tables[i][j] = -1;
 			}
 		}
 	}
@@ -1376,7 +1589,7 @@ clearTables(bool clearAll, int tableNumber) {
 		//Si el booleano está en false, entonces se procede a limpiar 
 		//sólo la mesa indicada.
 		for (int j = 0; j < MAX_COFFEES; j++) {
-			tables[tableNumber][j] = 0;
+			tables[tableNumber][j] = -1;
 		}
 	}
 }
@@ -1395,7 +1608,7 @@ clearCashbox() {
 
 void
 clearBar() {
-	for (int i = 0; i < MAX_COFFEES; i++) bar[i] = 0;
+	for (int i = 0; i < MAX_COFFEES; i++) bar[i] = -1;
 }
 
 bool
